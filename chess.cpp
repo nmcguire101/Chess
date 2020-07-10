@@ -15,6 +15,12 @@
 // Player constructor
 Player::Player(std::string name_in, bool is_white_in)
     : name(name_in), is_white(is_white_in) {
+    if (is_white) {
+        pieces = "PNRBQK";
+    }
+    else {
+        pieces = "pnrbqk";
+    }
     num_pieces = 16;
     in_check = false;
 }
@@ -23,43 +29,102 @@ Player::Player(std::string name_in, bool is_white_in)
 
 }*/
 
-bool Player::valid_move(std::string move, Board &board) {
-    Position start{ (int)(move[0] - 'A'), (int)(move[1] - '1') };
-    if (start.row < 'A' || start.row > 'H' || start.column < 1 || start.column > 8) {
+// Checks that start position is within range and is a moveable piece
+bool Player::valid_start(Position &start, Board &board) {
+    if (start.row < 0 || start.row > 7 || start.column < 0 || start.column > 7) {
         std::cout << "Start position out of board range.\n";
         return false;
     }
     char piece = board.board_at(start);
-    if (is_white && !(piece == 'P' || piece == 'R' || piece == 'K' || piece == 'Q'
-        || piece == 'N' || piece == 'B')) {
-        std::cout << "No movable piece at start position.\n";
-        return false;
+    if (piece == pieces[0] || piece == pieces[1] || piece == pieces[2] 
+        || piece == pieces[3] || piece == pieces[4] || piece == pieces[5]) {
+        return true;
     }
-    if (!is_white && !(piece == 'p' || piece == 'r' || piece == 'k' || piece == 'q'
-        || piece == 'n' || piece == 'b')) {
-        std::cout << "No movable piece at start position.\n";
-        return false;
-    }
-    Position end{ (int)(move[3] - 'A'), (int)(move[4] - '1') };
-    if (end.row < 'A' || end.row > 'H' || end.column < 1 || end.column > 8) {
+    std::cout << "No movable piece at start position.\n";
+    return false;
+}
+
+// Returns true if player's move is valid. If not, returns false
+bool Player::valid_move(Position &start, Position &end, Board &board) {
+    if (end.row < 0 || end.row > 7 || end.column < 0 || end.column > 7) {
         std::cout << "End position out of board range.\n";
         return false;
     }
-    if (!board.piece_movement(piece, start, end)) {
-        return false;
+    char piece = board.board_at(start);
+    // pawn
+    if (piece == pieces[0]) {
+        if (!board.pawn_movement(is_white, start, end)) {
+            std::cout << "Invalid pawn movement.\n";
+            return false;
+        }
+        return true;
     }
-    return true;
+    // knight
+    else if (piece == pieces[1]) {
+        if (!board.knight_movement(is_white, start, end)) {
+            std::cout << "Invalid knight movement.\n";
+            return false;
+        }
+        return true;
+    }
+    // rook
+    else if (piece == pieces[2]) {
+        if (!board.rook_movement(is_white, start, end)) {
+            std::cout << "Invalid rook movement.\n";
+            return false;
+        }
+        return true;
+    }
+    // bishop
+    else if (piece == pieces[3]) {
+        if (!board.bishop_movement(is_white, start, end)) {
+            std::cout << "Invalid bishop movement.\n";
+            return false;
+        }
+        return true;
+    }
+    // queen
+    else if (piece == pieces[4]) {
+        if (!board.queen_movement(is_white, start, end)) {
+            std::cout << "Invalid queen movement.\n";
+            return false;
+        }
+        return true;
+    }
+    // king
+    else {
+        if (!board.king_movement(is_white, start, end)) {
+            std::cout << "Invalid king movement.\n";
+            return false;
+        }
+        return true;
+    }
 }
 
 void Player::make_turn(Board &board) {
-    std::string move;
-    std::cout << name << ", please enter your move: ";
-    std::cin >> move;
-    while (!valid_move(move, board)) {
-        std::cout << name << ", please enter your move: ";
-        std::cin >> move;
+    // Gets start location
+    std::string start;
+    std::cout << name << ", please enter location of piece to move (ex: A2): ";
+    std::cin >> start;
+    Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+    while (!valid_start(start_pos, board)) {
+        std::cout << name << ", please enter location of piece to move (ex: A2): ";
+        std::cin >> start;
+        Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
     }
-    // perform move
+    // Gets end location
+    std::string end;
+    std::cout << name << ", please enter location of where to move piece (ex: E5): ";
+    std::cin >> end;
+    Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
+    while (!valid_move(start_pos, end_pos, board)) {
+        std::cout << name << ", please enter location of where to move piece (ex: E5): ";
+        std::cin >> end;
+        Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
+    }
+    // Once valid move is given, perform move
+    char piece = board.board_at(start_pos);
+    board.perform_move(is_white, piece, start_pos, end_pos);
 }
 
 void welcome_message() {
