@@ -17,17 +17,45 @@ Player::Player(std::string name_in, bool is_white_in)
     : name(name_in), is_white(is_white_in) {
     if (is_white) {
         pieces = "PNRBQK";
+        Position king_in{ 7, 3 };
+        king = king_in;
     }
     else {
         pieces = "pnrbqk";
+        Position king_in{ 0, 3 };
+        king = king_in;
     }
     num_pieces = 16;
     in_check = false;
 }
 
-/*bool Player::in_checkmate() {
-
-}*/
+// Checks if player is in checkmate
+bool Player::in_checkmate(Board &board) {
+    // check if king's position is being attacked
+    if (in_check) {
+        // check if king can move to any surrounding position
+        Position temp{ king.row - 1, king.column };
+        Position temp1{ king.row + 1, king.column };
+        Position temp2{ king.row, king.column + 1 };
+        Position temp3{ king.row, king.column - 1};
+        Position temp4{ king.row - 1, king.column - 1 };
+        Position temp5{ king.row - 1, king.column + 1 };
+        Position temp6{ king.row + 1, king.column - 1 };
+        Position temp7{ king.row + 1, king.column + 1 };
+        if (board.king_movement(is_white, king, temp) || 
+            board.king_movement(is_white, king, temp1) ||
+            board.king_movement(is_white, king, temp2) ||
+            board.king_movement(is_white, king, temp3) ||
+            board.king_movement(is_white, king, temp4) ||
+            board.king_movement(is_white, king, temp5) ||
+            board.king_movement(is_white, king, temp6) ||
+            board.king_movement(is_white, king, temp7)) {
+            return false;
+        }
+        // check if piece can block/capture attacker
+    }
+    return false;
+}
 
 // Checks that start position is within range and is a moveable piece
 bool Player::valid_start(Position &start, Board &board) {
@@ -51,6 +79,9 @@ bool Player::valid_move(Position &start, Position &end, Board &board) {
         return false;
     }
     char piece = board.board_at(start);
+    if (in_check) {
+
+    }
     // pawn
     if (piece == pieces[0]) {
         if (!board.pawn_movement(is_white, start, end)) {
@@ -97,8 +128,19 @@ bool Player::valid_move(Position &start, Position &end, Board &board) {
             std::cout << "Invalid king movement.\n";
             return false;
         }
+        king = end;
         return true;
     }
+}
+
+void Player::update_check(Board &board) {
+    if (is_white && board.white_contains(king)) {
+        in_check = true;
+    }
+    else if (!is_white && board.black_contains(king)) {
+        in_check = true;
+    }
+    in_check = false;
 }
 
 void Player::make_turn(Board &board) {
@@ -118,6 +160,12 @@ void Player::make_turn(Board &board) {
     std::cin >> end;
     Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
     while (!valid_move(start_pos, end_pos, board)) {
+        Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+        while (!valid_start(start_pos, board)) {
+            std::cout << name << ", please enter location of piece to move (ex: A2): ";
+            std::cin >> start;
+            Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+        }
         std::cout << name << ", please enter location of where to move piece (ex: E5): ";
         std::cin >> end;
         Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
@@ -125,6 +173,7 @@ void Player::make_turn(Board &board) {
     // Once valid move is given, perform move
     char piece = board.board_at(start_pos);
     board.perform_move(is_white, piece, start_pos, end_pos);
+    update_check(board);
 }
 
 void welcome_message() {
@@ -166,10 +215,10 @@ int main() {
     Board board;
     board.print_board();
 
-    /*while (!player1.in_checkmate() && !player2.in_checkmate()) {
+    while (!player1.in_checkmate(board) && !player2.in_checkmate(board)) {
         player1.make_turn(board);
         player2.make_turn(board);
-    }*/
+    }
 
     return 0;
 }

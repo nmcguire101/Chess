@@ -18,15 +18,16 @@ struct Position {
 class Board {
 private:
     std::vector<std::string> board;
-    // available movements for white king
-    std::vector<std::vector<bool>> white_check;
-    // available movements for black king
-    std::vector<std::vector<bool>> black_check;
+    // attackable positions
+    std::vector<Position> white;
+    std::vector<Position> black;
 public: 
     Board();
     void print_line(int color1, int color2, int line_in);
     void print_board();
     char board_at(Position &position);
+    bool white_contains(Position &position);
+    bool black_contains(Position &position);
     bool opponents_piece(bool is_white, int row, int column);
     // checks for valid piece movement for specified piece type
     bool pawn_movement(bool is_white, Position &start, Position &end);

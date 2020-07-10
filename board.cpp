@@ -28,9 +28,9 @@ Board::Board() {
                                        "pppppppp",
                                        "rnbkqbnr" };
     board = board_in;
-    std::vector<std::vector<bool>> check_in(8, std::vector<bool> (8, false));
-    white_check = check_in;
-    black_check = check_in;
+    std::vector<Position> temp;
+    white = temp;
+    black = temp;
 }
 
 // Prints one line of the chess board
@@ -90,6 +90,26 @@ void Board::print_board() {
 // Returns char at position specified
 char Board::board_at(Position &position) {
     return board[position.row][position.column];
+}
+
+// Checks if white attackable positions vector contains a given position
+bool Board::white_contains(Position &position) {
+    for (auto it : white) {
+        if (it.row == position.row && it.column == position.column) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Checks if black attackable positions vector contains a given position
+bool Board::black_contains(Position &position) {
+    for (auto it : black) {
+        if (it.row == position.row && it.column == position.column) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Determines if piece specified is the opponent's piece
@@ -286,6 +306,9 @@ bool Board::queen_movement(bool is_white, Position &start, Position &end) {
 
 // Checks for valid king movement
 bool Board::king_movement(bool is_white, Position &start, Position &end) {
+    if (end.row < 0 || end.row > 7 || end.column < 0 || end.column > 7) {
+        return false;
+    }
     if ((board[end.row][end.column] == ' '  || 
         opponents_piece(is_white, end.row, end.column))
         && (abs(end.row - start.row) == 1 || abs(end.column - start.column) == 1)) {

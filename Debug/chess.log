@@ -1,5 +1,4 @@
 ﻿  board.cpp
-c:\users\natalie\desktop\coding_experience\chess\chess\board.cpp(261): error C2181: illegal else without matching if
-c:\users\natalie\desktop\coding_experience\chess\chess\board.cpp(381): error C2065: 'k': undeclared identifier
-c:\users\natalie\desktop\coding_experience\chess\chess\board.cpp(381): error C2065: 'l': undeclared identifier
-c:\users\natalie\desktop\coding_experience\chess\chess\board.cpp(382): error C2059: syntax error: '}'
+  chess.cpp
+  Generating Code...
+  chess.vcxproj -> C:\Users\Natalie\Desktop\Coding_Experience\chess\Debug\chess.exe
