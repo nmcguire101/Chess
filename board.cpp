@@ -28,9 +28,9 @@ Board::Board() {
                                        "pppppppp",
                                        "rnbkqbnr" };
     board = board_in;
-    std::vector<Position> temp;
-    white = temp;
-    black = temp;
+    std::vector<std::vector<bool>> check_in(8, std::vector<bool>(8, false));
+    white_check = check_in;
+    black_check = check_in;
 }
 
 // Prints one line of the chess board
@@ -94,20 +94,16 @@ char Board::board_at(Position &position) {
 
 // Checks if white attackable positions vector contains a given position
 bool Board::white_contains(Position &position) {
-    for (auto it : white) {
-        if (it.row == position.row && it.column == position.column) {
-            return true;
-        }
+    if (white_check[position.row][position.column] == true) {
+        return true;
     }
     return false;
 }
 
 // Checks if black attackable positions vector contains a given position
 bool Board::black_contains(Position &position) {
-    for (auto it : black) {
-        if (it.row == position.row && it.column == position.column) {
-            return true;
-        }
+    if (black_check[position.row][position.column] == true) {
+        return true;
     }
     return false;
 }
@@ -317,94 +313,25 @@ bool Board::king_movement(bool is_white, Position &start, Position &end) {
     return false;
 }
 
-// Updates vector given
-void Board::update_check(bool is_white, std::vector<std::vector<bool>> &check) {
+// Updates white check vector
+void Board::update_white_check() {
     std::vector<std::vector<bool>> check_in(8, std::vector<bool>(8, false));
-    check = check_in;
-    int lowercase = 0;
-    if (!is_white) {
-        lowercase += 20;
-    }
-    for (int i = 0; i < 9; ++i) {
-        for (int j = 0; j < 9; ++j) {
-            if (is_white && board[i][j] == 'P') {
-                if (i != 0) {
-                    if (j + 1 < 9) {
-                        board[i - 1][j + 1] = true;
-                    }
-                    if (j - 1 >= 0) {
-                        board[i - 1][j - 1] = true;
-                    }
-                }
-            }
-            if (!is_white && board[i][j] == 'p') {
-                if (i != 8) {
-                    if (j + 1 < 9) {
-                        board[i + 1][j + 1] = true;
-                    }
-                    if (j - 1 >= 0) {
-                        board[i + 1][j - 1] = true;
-                    }
-                }
-            }
-            else if (board[i][j] == 'R' + lowercase) {
-                // above
-                int k = i + 1; 
-                while (k <= 8 && board[k][j] == ' ') {
-                    check[k][j] = true;
-                    ++k;
-                }
-                // below
-                k = i - 1;
-                while (k >= 0 && board[k][j] == ' ') {
-                    check[k][j] = true;
-                    --k;
-                }
-                // right
-                k = j + 1;
-                while (k <= 8 && board[i][k] == ' ') {
-                    check[i][k] = true;
-                    ++k;
-                }
-                // left
-                k = j - 1;
-                while (k >= 0 && board[i][k] == ' ') {
-                    check[i][k] = true;
-                    --k;
-                }
-            }
-            /*else if (board[i][j] == 'B' + lowercase) {
-                while (board[k][l] == ' ')
-            }
-            else if (board[i][j] == 'Q' + lowercase) {
+    white_check = check_in;
 
-            }
-            else if (board[i][j] == 'K' + lowercase) {
+}
 
-            }
-            else if (board[i][j] == 'P' + lowercase) {
+// Updates black check vector
+void Board::update_black_check() {
+    std::vector<std::vector<bool>> check_in(8, std::vector<bool>(8, false));
+    black_check = check_in;
 
-            }
-            else if (board[i][j] == ' ') {
-                
-            }*/
-            else {
-                check[i][j] = true;
-            }
-        }
-    }
 }
 
 void Board::perform_move(bool is_white, char piece, Position &start, Position &end) {
     // moves piece on board
     board[start.row][end.column] = ' ';
     board[end.row][end.column] = piece;
-    // updates black check vector for other player
-    if (is_white) {
-        update_check(false, black_check);
-    }
-    // updates white check vector
-    else {
-        update_check(true, white_check);
-    }
+    // updates check vector for both players
+    update_black_check();
+    update_white_check();
 }

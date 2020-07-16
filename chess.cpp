@@ -1,3 +1,4 @@
+
 #include "chess.h"
 #include <string>
 #include <iostream>
@@ -37,12 +38,12 @@ bool Player::in_checkmate(Board &board) {
         Position temp{ king.row - 1, king.column };
         Position temp1{ king.row + 1, king.column };
         Position temp2{ king.row, king.column + 1 };
-        Position temp3{ king.row, king.column - 1};
+        Position temp3{ king.row, king.column - 1 };
         Position temp4{ king.row - 1, king.column - 1 };
         Position temp5{ king.row - 1, king.column + 1 };
         Position temp6{ king.row + 1, king.column - 1 };
         Position temp7{ king.row + 1, king.column + 1 };
-        if (board.king_movement(is_white, king, temp) || 
+        if (board.king_movement(is_white, king, temp) ||
             board.king_movement(is_white, king, temp1) ||
             board.king_movement(is_white, king, temp2) ||
             board.king_movement(is_white, king, temp3) ||
@@ -64,8 +65,28 @@ bool Player::valid_start(Position &start, Board &board) {
         return false;
     }
     char piece = board.board_at(start);
-    if (piece == pieces[0] || piece == pieces[1] || piece == pieces[2] 
-        || piece == pieces[3] || piece == pieces[4] || piece == pieces[5]) {
+    if (piece == pieces[0]) {
+        std::cout << "Moving pawn\n";
+        return true;
+    } 
+    if (piece == pieces[1]) {
+        std::cout << "Moving knight\n";
+        return true;
+    }
+    if (piece == pieces[2]) {
+        std::cout << "Moving rook\n";
+        return true;
+    }
+    if (piece == pieces[3]) {
+        std::cout << "Moving bishop\n";
+        return true;
+    }
+    if (piece == pieces[4]) {
+        std::cout << "Moving queen\n";
+        return true;
+    }
+    if (piece == pieces[5]) {
+        std::cout << "Moving king\n";
         return true;
     }
     std::cout << "No movable piece at start position.\n";
@@ -144,22 +165,29 @@ void Player::update_check(Board &board) {
 }
 
 void Player::make_turn(Board &board) {
+    std::string start_mes = ", please enter location of piece to move (ex: A2): ";
+    std::string end_mes = ", please enter end location or type \"undo\" (ex: E5): ";
     // Gets start location
+    // Checks if valid, requests new position until valid one is given
+    // Gets end location
+    // If end location is not valid or says undo, starts over
     std::string start;
-    std::cout << name << ", please enter location of piece to move (ex: A2): ";
+    std::cout << name << start_mes;
     std::cin >> start;
     Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
     while (!valid_start(start_pos, board)) {
-        std::cout << name << ", please enter location of piece to move (ex: A2): ";
+        std::cout << name << start_mes;
         std::cin >> start;
         Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
     }
     // Gets end location
     std::string end;
-    std::cout << name << ", please enter location of where to move piece (ex: E5): ";
+    std::cout << name << end_mes;
     std::cin >> end;
     Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
-    while (!valid_move(start_pos, end_pos, board)) {
+    while (end == "undo" || !valid_move(start_pos, end_pos, board)) {
+        std::cout << name << start_mes;
+        std::cin >> start;
         Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
         while (!valid_start(start_pos, board)) {
             std::cout << name << ", please enter location of piece to move (ex: A2): ";
@@ -189,6 +217,48 @@ void welcome_message() {
 }
 
 void print_rules() {
+    std::cout << "__________________________________________________________________\n";
+    std::cout << "                        Chess: how-to-play                        \n";
+    std::cout << "------------------------------------------------------------------\n\n";
+    std::cout << "General guidelines:\n\n";
+    std::cout << "      The ultimate aim is delivering a checkmate: trapping your\n";
+    std::cout << "opponent's king. White is always first to move and players take\n";
+    std::cout << "turns alternately moving one piece at a time. Movement is\n";
+    std::cout << "required. If it's a player's turn to move and they're not in check\n";
+    std::cout << "but have no legal moves, it is a \"Stalemate\" and it ends the game\n";
+    std::cout << "in a draw. When a king is threatened with capture (but can protect\n";
+    std::cout << "himself or escape), it's called check. If a king is in check, then\n";
+    std::cout << "the player must make a move that eliminates the threat of capture\n";
+    std::cout << "and cannot leave the king in check. Checkmate happens when a king\n";
+    std::cout << "is in check and there is no legal move to escape. It ends the game.\n\n";
+    std::cout << "------------------------------------------------------------------\n\n";
+    std::cout << "Piece movement:\n\n";
+    std::cout << "      Each type of piece has its own method of movement. A piece may be\n";
+    std::cout << "moved to another position or may capture an opponent's piece, \n";
+    std::cout << "replacing it on its square. With the exception of the knight, a\n";
+    std::cout << "piece may not move over or through any of the other pieces.\n\n";
+    std::cout << "King: can move exactly one square horizontally, vertically, or \n";
+    std::cout << "      diagonally. Once in every game, each king is allowed to make\n";
+    std::cout << "      a special move, known as castling.\n\n";
+    std::cout << "Queen: can move any number of vacant squares diagonally, \n";
+    std::cout << "       horizontally, or vertically.\n\n";
+    std::cout << "Rook: can move any number of vacant squares vertically or \n";
+    std::cout << "      horizontally. It also is moved while castling.\n\n";
+    std::cout << "Bishop: can move any number of vacant squares in any diagonal \n";
+    std::cout << "        direction.\n\n";
+    std::cout << "Knight: can move one square along any rank or file and then at an \n";
+    std::cout << "        angle. The knight's movement can also be viewed as an “L”\n";
+    std::cout << "        or \"7\" laid out at any horizontal or vertical angle.\n\n";
+    std::cout << "Pawn: can move forward one square, if that square is unoccupied. \n";
+    std::cout << "      If it has not yet moved, the pawn has the option of moving\n";
+    std::cout << "      two squares forward provided both squares in front of the pawn\n";
+    std::cout << "      are unoccupied. A pawn cannot move backward. Pawns are the\n";
+    std::cout << "      only pieces that capture differently from how they move. They\n";
+    std::cout << "      can capture an enemy piece on either of the two spaces\n";
+    std::cout << "      diagonal in front of them but cannot move to these spaces if\n";
+    std::cout << "      they are vacant.\n\n";
+    std::cout << "Rules from chesscoachonline.com\n";
+    std::cout << "------------------------------------------------------------------\n\n";
     return;
 }
 

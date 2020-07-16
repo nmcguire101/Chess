@@ -19,8 +19,8 @@ class Board {
 private:
     std::vector<std::string> board;
     // attackable positions
-    std::vector<Position> white;
-    std::vector<Position> black;
+    std::vector<std::vector<bool>> white_check;
+    std::vector<std::vector<bool>> black_check;
 public: 
     Board();
     void print_line(int color1, int color2, int line_in);
@@ -36,7 +36,8 @@ public:
     bool bishop_movement(bool is_white, Position &start, Position &end);
     bool queen_movement(bool is_white, Position &start, Position &end);
     bool king_movement(bool is_white, Position &start, Position &end);
-    void update_check(bool is_white, std::vector<std::vector<bool>> &check);
+    void update_white_check();
+    void update_black_check();
     void perform_move(bool is_white, char piece, Position &start, Position &end);
 };
 
