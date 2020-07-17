@@ -15,167 +15,151 @@
 
 // Player constructor
 Player::Player(std::string name_in, bool is_white_in)
-    : name(name_in), is_white(is_white_in) {
-    if (is_white) {
-        pieces = "PNRBQK";
-        Position king_in{ 7, 3 };
-        king = king_in;
+    : name(name_in), in_check(false), is_white(is_white_in) {
+    std::vector<Piece> pieces_in;
+    pieces_in.reserve(16);
+    int row = 0;
+    int ch = 0;
+    if (!is_white_in) {
+        row = 7;
+        ch = 32;
     }
-    else {
-        pieces = "pnrbqk";
-        Position king_in{ 0, 3 };
-        king = king_in;
+    std::vector<Position> valid_moves_in;
+    // adds king
+    Position pos{ row, 3 };
+    king = pos;
+    Piece temp_king{ PieceName::King, pos, 'K' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(temp_king);
+    // adds queen
+    pos.column = 4;
+    Piece queen{ PieceName::Queen, pos, 'Q' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(queen);
+    // adds rooks
+    pos.column = 0;
+    Piece rook1{ PieceName::Rook, pos, 'R' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(rook1);
+    pos.column = 7;
+    Piece rook2{ PieceName::Rook, pos, 'R' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(rook2);
+    // adds knights
+    pos.column = 1;
+    Piece knight1{ PieceName::Knight, pos, 'N' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(knight1);
+    pos.column = 6;
+    Piece knight2{ PieceName::Knight, pos, 'N' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(knight2);
+    // adds bishops
+    pos.column = 2;
+    Piece bishop1{ PieceName::Bishop, pos, 'B' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(bishop1);
+    pos.column = 5;
+    Piece bishop2{ PieceName::Bishop, pos, 'B' + ch, is_white_in, valid_moves_in };
+    pieces_in.push_back(bishop2);
+    row = 1;
+    if (!is_white_in) {
+        row = 6;
     }
-    num_pieces = 16;
-    in_check = false;
+    // adds pawns
+    for (int i = 0; i < 8; ++i) {
+        Position pos{ row, i };
+        Piece temp{ PieceName::Pawn, pos, 'P' + ch, is_white_in, valid_moves_in };
+        pieces_in.push_back(temp);
+    }
+    pieces = pieces_in;
 }
 
-// Checks if player is in checkmate
-bool Player::in_checkmate(Board &board) {
-    // check if king's position is being attacked
-    if (in_check) {
-        // check if king can move to any surrounding position
-        Position temp{ king.row - 1, king.column };
-        Position temp1{ king.row + 1, king.column };
-        Position temp2{ king.row, king.column + 1 };
-        Position temp3{ king.row, king.column - 1 };
-        Position temp4{ king.row - 1, king.column - 1 };
-        Position temp5{ king.row - 1, king.column + 1 };
-        Position temp6{ king.row + 1, king.column - 1 };
-        Position temp7{ king.row + 1, king.column + 1 };
-        if (board.king_movement(is_white, king, temp) ||
-            board.king_movement(is_white, king, temp1) ||
-            board.king_movement(is_white, king, temp2) ||
-            board.king_movement(is_white, king, temp3) ||
-            board.king_movement(is_white, king, temp4) ||
-            board.king_movement(is_white, king, temp5) ||
-            board.king_movement(is_white, king, temp6) ||
-            board.king_movement(is_white, king, temp7)) {
-            return false;
-        }
-        // check if piece can block/capture attacker
-    }
-    return false;
+std::vector<Piece> & Player::get_pieces() {
+    return pieces;
 }
 
 // Checks that start position is within range and is a moveable piece
-bool Player::valid_start(Position &start, Board &board) {
+bool Player::valid_start(Position &start) {
     if (start.row < 0 || start.row > 7 || start.column < 0 || start.column > 7) {
         std::cout << "Start position out of board range.\n";
         return false;
     }
-    char piece = board.board_at(start);
-    if (piece == pieces[0]) {
-        std::cout << "Moving pawn\n";
-        return true;
-    } 
-    if (piece == pieces[1]) {
-        std::cout << "Moving knight\n";
-        return true;
-    }
-    if (piece == pieces[2]) {
-        std::cout << "Moving rook\n";
-        return true;
-    }
-    if (piece == pieces[3]) {
-        std::cout << "Moving bishop\n";
-        return true;
-    }
-    if (piece == pieces[4]) {
-        std::cout << "Moving queen\n";
-        return true;
-    }
-    if (piece == pieces[5]) {
-        std::cout << "Moving king\n";
-        return true;
+    Compare_position compare;
+    for (int i = 0; (int)(pieces.size()); ++i) {
+        if (compare(start, pieces[i].pos)) {
+            std::cout << "Moving " << to_string(pieces[i].name) << "\n";
+            current = pieces[i];
+            return true;
+        }
     }
     std::cout << "No movable piece at start position.\n";
     return false;
 }
 
 // Returns true if player's move is valid. If not, returns false
-bool Player::valid_move(Position &start, Position &end, Board &board) {
+bool Player::valid_move(Position &end) {
     if (end.row < 0 || end.row > 7 || end.column < 0 || end.column > 7) {
         std::cout << "End position out of board range.\n";
         return false;
     }
-    char piece = board.board_at(start);
-    if (in_check) {
+    Compare_position compare;
+    for (int i = 0; i < (int)(current.valid_moves.size()); ++i) {
+        if (compare(end, current.valid_moves[i])) {
+            return true;
+        }
+    }
+    std::cout << "Invalid " << to_string(current.name) << " movement.\n";
+    return false;
+}
 
-    }
-    // pawn
-    if (piece == pieces[0]) {
-        if (!board.pawn_movement(is_white, start, end)) {
-            std::cout << "Invalid pawn movement.\n";
-            return false;
+// Generates all of the valid moves for each piece
+void Player::generate_valid_moves(bool in_check, Board &board, 
+    std::vector<Piece> &opponents_pieces) {
+    for (auto it : pieces) {
+        switch (it.name) {
+        case PieceName::Pawn:
+            it.valid_moves = board.pawn_movement(in_check, it, opponents_pieces);
+            break;
+        case PieceName::Knight:
+            it.valid_moves = board.knight_movement(in_check, it, opponents_pieces);
+            break;
+        case PieceName::Rook:
+            it.valid_moves = board.rook_movement(in_check, it, opponents_pieces);
+            break;
+        case PieceName::Bishop:
+            it.valid_moves = board.bishop_movement(in_check, it, opponents_pieces);
+            break;
+        case PieceName::Queen:
+            it.valid_moves = board.queen_movement(in_check, it, opponents_pieces);
+            break;
+        case PieceName::King:
+            it.valid_moves = board.king_movement(in_check, it, opponents_pieces);
+            break;
         }
-        return true;
-    }
-    // knight
-    else if (piece == pieces[1]) {
-        if (!board.knight_movement(is_white, start, end)) {
-            std::cout << "Invalid knight movement.\n";
-            return false;
-        }
-        return true;
-    }
-    // rook
-    else if (piece == pieces[2]) {
-        if (!board.rook_movement(is_white, start, end)) {
-            std::cout << "Invalid rook movement.\n";
-            return false;
-        }
-        return true;
-    }
-    // bishop
-    else if (piece == pieces[3]) {
-        if (!board.bishop_movement(is_white, start, end)) {
-            std::cout << "Invalid bishop movement.\n";
-            return false;
-        }
-        return true;
-    }
-    // queen
-    else if (piece == pieces[4]) {
-        if (!board.queen_movement(is_white, start, end)) {
-            std::cout << "Invalid queen movement.\n";
-            return false;
-        }
-        return true;
-    }
-    // king
-    else {
-        if (!board.king_movement(is_white, start, end)) {
-            std::cout << "Invalid king movement.\n";
-            return false;
-        }
-        king = end;
-        return true;
     }
 }
 
-void Player::update_check(Board &board) {
-    if (is_white && board.white_contains(king)) {
-        in_check = true;
+// Returns true if player has no valid moves; checkmate/stalemate
+bool Player::no_moves() {
+    for (auto it : pieces) {
+        if (!it.valid_moves.empty()) {
+            return false;
+        }
     }
-    else if (!is_white && board.black_contains(king)) {
-        in_check = true;
-    }
-    in_check = false;
+    return true;
 }
 
-void Player::make_turn(Board &board) {
+bool Player::make_turn(Board &board, std::vector<Piece> &opponents_pieces) {
+    if (board.in_check(king, opponents_pieces)) {
+        in_check = true;
+    }
+    generate_valid_moves(in_check, board, opponents_pieces);
+    if (no_moves()) {
+        return false;
+    }
     std::string start_mes = ", please enter location of piece to move (ex: A2): ";
     std::string end_mes = ", please enter end location or type \"undo\" (ex: E5): ";
     // Gets start location
-    // Checks if valid, requests new position until valid one is given
-    // Gets end location
-    // If end location is not valid or says undo, starts over
     std::string start;
     std::cout << name << start_mes;
     std::cin >> start;
     Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
-    while (!valid_start(start_pos, board)) {
+    // Checks if valid, requests new position until valid one is given
+    while (!valid_start(start_pos)) {
         std::cout << name << start_mes;
         std::cin >> start;
         Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
@@ -185,23 +169,27 @@ void Player::make_turn(Board &board) {
     std::cout << name << end_mes;
     std::cin >> end;
     Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
-    while (end == "undo" || !valid_move(start_pos, end_pos, board)) {
+    // If end location is not valid or says undo, starts over
+    while (end == "undo" || !valid_move(end_pos)) {
         std::cout << name << start_mes;
         std::cin >> start;
         Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
-        while (!valid_start(start_pos, board)) {
-            std::cout << name << ", please enter location of piece to move (ex: A2): ";
+        while (!valid_start(start_pos)) {
+            std::cout << name << start_mes;
             std::cin >> start;
             Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
         }
-        std::cout << name << ", please enter location of where to move piece (ex: E5): ";
+        std::cout << name << end_mes;
         std::cin >> end;
         Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
     }
     // Once valid move is given, perform move
     char piece = board.board_at(start_pos);
-    board.perform_move(is_white, piece, start_pos, end_pos);
-    update_check(board);
+    board.perform_move(current, end_pos);
+    if (current.name == PieceName::King) {
+        king = end_pos;
+    }
+    return true;
 }
 
 void welcome_message() {
@@ -285,10 +273,20 @@ int main() {
     Board board;
     board.print_board();
 
-    while (!player1.in_checkmate(board) && !player2.in_checkmate(board)) {
-        player1.make_turn(board);
-        player2.make_turn(board);
-    }
+    // Checks for stalemate: player whose turn it is has no legal moves
+    bool game_over = false;
+    do {
+        std::vector<Piece> player2_pieces = player2.get_pieces();
+        if (!player1.make_turn(board, player2_pieces)) {
+            std::cout << "Game over. " << player2_name << " has won!\n";
+            break;
+        }
+        std::vector<Piece> player1_pieces = player1.get_pieces();
+        if (!player2.make_turn(board, player1_pieces)) {
+            std::cout << "Game over. " << player1_name << " has won!\n";
+            break;
+        }
+    } while (!game_over);
 
     return 0;
 }

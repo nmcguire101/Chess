@@ -7,18 +7,21 @@
 class Player {
 private:
     std::string name;
-    std::string pieces;
-    int num_pieces;
     bool in_check;
     bool is_white;
+    std::vector<Piece> pieces;
     Position king;
+    Piece current;
+
 public:
     Player(std::string name_in, bool is_white_in);
-    bool in_checkmate(Board &board);
-    bool valid_start(Position &start, Board &board);
-    bool valid_move(Position &start, Position &end, Board &board);
-    void make_turn(Board &board);
-    void update_check(Board &board);
+    std::vector<Piece> & get_pieces();
+    bool valid_start(Position &start);
+    bool valid_move(Position &end);
+    void generate_valid_moves(bool in_check, Board &board, 
+        std::vector<Piece> &opponents_pieces);
+    bool no_moves();
+    bool make_turn(Board &board, std::vector<Piece> &opponents_pieces);
 };
 
 void welcome_message();
