@@ -72,6 +72,10 @@ std::vector<Piece> & Player::get_pieces() {
     return pieces;
 }
 
+void Player::set_pieces(std::vector<Piece> &pieces_in) {
+    pieces = pieces_in;
+}
+
 // Checks that start position is within range and is a moveable piece
 bool Player::valid_start(Position &start) {
     if (start.row < 0 || start.row > 7 || start.column < 0 || start.column > 7) {
@@ -79,8 +83,8 @@ bool Player::valid_start(Position &start) {
         return false;
     }
     Compare_position compare;
-    for (int i = 0; (int)(pieces.size()); ++i) {
-        if (compare(start, pieces[i].pos)) {
+    for (int i = 0; i < (int)(pieces.size()); ++i) {
+        if (compare(start, pieces[i].pos) && !pieces[i].valid_moves.empty()) {
             std::cout << "Moving " << to_string(pieces[i].name) << "\n";
             current = pieces[i];
             return true;
@@ -109,27 +113,51 @@ bool Player::valid_move(Position &end) {
 // Generates all of the valid moves for each piece
 void Player::generate_valid_moves(bool in_check, Board &board, 
     std::vector<Piece> &opponents_pieces) {
-    for (auto it : pieces) {
-        switch (it.name) {
+    for (int i = 0; i < (int)(pieces.size()); ++i) {
+        std::vector<Position>& temp = pieces[i].valid_moves;
+        switch (pieces[i].name) {
         case PieceName::Pawn:
-            it.valid_moves = board.pawn_movement(in_check, it, opponents_pieces);
+            board.pawn_movement(in_check, king, pieces[i],
+                opponents_pieces, temp);
             break;
         case PieceName::Knight:
-            it.valid_moves = board.knight_movement(in_check, it, opponents_pieces);
+            board.knight_movement(in_check, king, pieces[i], 
+                opponents_pieces, temp);
             break;
         case PieceName::Rook:
-            it.valid_moves = board.rook_movement(in_check, it, opponents_pieces);
+            board.rook_movement(in_check, king, pieces[i], 
+                opponents_pieces, temp);
             break;
         case PieceName::Bishop:
-            it.valid_moves = board.bishop_movement(in_check, it, opponents_pieces);
+            board.bishop_movement(false, in_check, king, pieces[i], 
+                opponents_pieces, temp);
             break;
         case PieceName::Queen:
-            it.valid_moves = board.queen_movement(in_check, it, opponents_pieces);
+            board.queen_movement(in_check, king, pieces[i], 
+                opponents_pieces, temp);
             break;
         case PieceName::King:
-            it.valid_moves = board.king_movement(in_check, it, opponents_pieces);
+            board.king_movement(in_check, king, pieces[i], 
+                opponents_pieces, temp);
             break;
         }
+        pieces[i].valid_moves = temp;
+    }
+    // Used for testing: REMEMBER TO COMMENT OUT
+    std::cout << in_check << '\n';
+    for (int i = 0; i < (int)(pieces.size()); ++i) {
+        std::cout << to_string(pieces[i].name) << 
+            (char)(pieces[i].pos.row + 'A') << pieces[i].pos.column + 1 << ": ";
+        if (!pieces[i].valid_moves.empty()) {
+            for (int j = 0; j < (int)(pieces[i].valid_moves.size()); ++j) {
+                std::cout << (char)(pieces[i].valid_moves[j].row + 'A')
+                    << pieces[i].valid_moves[j].column + 1 << " ";
+            }
+        }
+        else {
+            std::cout << "none";
+        }
+        std::cout << "\n";
     }
 }
 
@@ -151,41 +179,56 @@ bool Player::make_turn(Board &board, std::vector<Piece> &opponents_pieces) {
     if (no_moves()) {
         return false;
     }
+    std::string capitalize = " (lowercase)";
+    if (is_white) {
+        capitalize = " (uppercase)";
+    }
     std::string start_mes = ", please enter location of piece to move (ex: A2): ";
     std::string end_mes = ", please enter end location or type \"undo\" (ex: E5): ";
     // Gets start location
     std::string start;
-    std::cout << name << start_mes;
+    std::cout << name << capitalize << start_mes;
     std::cin >> start;
     Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
     // Checks if valid, requests new position until valid one is given
     while (!valid_start(start_pos)) {
-        std::cout << name << start_mes;
+        std::cout << name << capitalize << start_mes;
         std::cin >> start;
-        Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+        start_pos.row = (int)(start[0] - 'A');
+        start_pos.column = (int)(start[1] - '1');
     }
     // Gets end location
     std::string end;
-    std::cout << name << end_mes;
+    std::cout << name << capitalize << end_mes;
     std::cin >> end;
     Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
     // If end location is not valid or says undo, starts over
     while (end == "undo" || !valid_move(end_pos)) {
-        std::cout << name << start_mes;
+        std::cout << name << capitalize << start_mes;
         std::cin >> start;
-        Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+        start_pos.row = (int)(start[0] - 'A');
+        start_pos.column = (int)(start[1] - '1');
         while (!valid_start(start_pos)) {
-            std::cout << name << start_mes;
+            std::cout << name << capitalize << start_mes;
             std::cin >> start;
-            Position start_pos{ (int)(start[0] - 'A'), (int)(start[1] - '1') };
+            start_pos.row = (int)(start[0] - 'A');
+            start_pos.column = (int)(start[1] - '1');
         }
-        std::cout << name << end_mes;
+        std::cout << name << capitalize << end_mes;
         std::cin >> end;
-        Position end_pos{ (int)(end[0] - 'A'), (int)(end[1] - '1') };
+        end_pos.row = (int)(end[0] - 'A');
+        end_pos.column = (int)(end[1] - '1');
     }
     // Once valid move is given, perform move
-    char piece = board.board_at(start_pos);
-    board.perform_move(current, end_pos);
+    board.perform_move(current, end_pos, opponents_pieces);
+    Compare_position compare;
+    for (int i = 0; i < (int)(pieces.size()); ++i) {
+        if (compare(current.pos, pieces[i].pos)) {
+            Position updated = { end_pos.row, end_pos.column };
+            pieces[i].pos = updated;
+            break;
+        }
+    }
     if (current.name == PieceName::King) {
         king = end_pos;
     }
@@ -281,11 +324,13 @@ int main() {
             std::cout << "Game over. " << player2_name << " has won!\n";
             break;
         }
+        player2.set_pieces(player2_pieces);
         std::vector<Piece> player1_pieces = player1.get_pieces();
         if (!player2.make_turn(board, player1_pieces)) {
             std::cout << "Game over. " << player1_name << " has won!\n";
             break;
         }
+        player1.set_pieces(player1_pieces);
     } while (!game_over);
 
     return 0;

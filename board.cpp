@@ -88,11 +88,6 @@ void Board::print_board() {
     std::cout << "     1     2     3     4     5     6     7     8  \n";
 }
 
-// Returns char at position specified
-char Board::board_at(Position &position) {
-    return board[position.row][position.column];
-}
-
 // Determines if piece specified is the opponent's piece
 // Only use function if you know there's a piece in that location
 bool Board::opponents_piece(bool is_white, int row, int column) {
@@ -117,21 +112,25 @@ bool Board::opponents_piece(bool is_white, int row, int column) {
 }
 
 // Performs move and then undoes it, but returns true if it takes K out of check
-bool Board::do_move(Piece &piece, int end_row, int end_col, 
+bool Board::do_move(Piece &piece, Position &king, int end_row, int end_col, 
     std::vector<Piece> &opponents) {
     std::vector<std::string> temp_board = board;
     temp_board[piece.pos.row][piece.pos.column] = ' ';
     temp_board[end_row][end_col] = piece.letter;
-    Position temp_king{ end_row, end_col };
-    if (!in_check_test(temp_king, temp_board, opponents)) {
+    Compare_position compare;
+    if (compare(piece.pos, king)) {
+        Position temp_king{ end_row, end_col };
+        king = temp_king;
+    }
+    if (!in_check_test(king, temp_board, opponents)) {
         return true;
     }
     return false;
 }
 
-std::vector<Position> & Board::pawn_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> movements;
+void Board::pawn_movement(bool in_check, Position &king, Piece &piece,
+    std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    pieces.clear();
     int temp = 1;
     if (!piece.is_white) {
         temp = -1;
@@ -139,129 +138,137 @@ std::vector<Position> & Board::pawn_movement(bool in_check, Piece &piece,
     // if in starting row, can move one or two spaces
     if (board[piece.pos.row + temp][piece.pos.column] == ' ' && piece.pos.row + temp >= 0
         && piece.pos.row + temp <= 7) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row + temp,
+        if (!in_check || (in_check && do_move(piece, king, piece.pos.row + temp,
             piece.pos.column, opponents))) {
             Position one{ piece.pos.row + temp, piece.pos.column };
-            movements.push_back(one);
+            pieces.push_back(one);
         }
         if ((piece.pos.row == 1 && piece.is_white) || (piece.pos.row == 6 && !piece.is_white)
             && board[piece.pos.row + (2 * temp)][piece.pos.column] == ' ' && (!in_check || 
-            (in_check && do_move(piece, piece.pos.row + (2 * temp), piece.pos.column, opponents)))) {
+            (in_check && do_move(piece, king, piece.pos.row + (2 * temp), piece.pos.column, opponents)))) {
             Position two{ piece.pos.row + (2 * temp), piece.pos.column };
-            movements.push_back(two);
+            pieces.push_back(two);
         }
     }
     // else can take piece on right or left diagonal
     if ((piece.pos.row + temp >= 0 && piece.pos.row + temp <= 7 && piece.pos.column + 1 <= 7
         && opponents_piece(piece.is_white, piece.pos.row + temp, piece.pos.column + 1)) &&
-        (!in_check || (in_check && do_move(piece, piece.pos.row + temp, 
+        (!in_check || (in_check && do_move(piece, king, piece.pos.row + temp, 
             piece.pos.column + 1, opponents)))) {
         Position three{ piece.pos.row + temp, piece.pos.column + 1 };
-        movements.push_back(three);
+        pieces.push_back(three);
     }
     if ((piece.pos.row + temp >= 0 && piece.pos.row + temp <= 7 && piece.pos.column - 1 >= 0
         && opponents_piece(piece.is_white, piece.pos.row + temp, piece.pos.column - 1)) &&
-        (!in_check || (in_check && do_move(piece, piece.pos.row + temp,
+        (!in_check || (in_check && do_move(piece, king, piece.pos.row + temp,
             piece.pos.column - 1, opponents)))) {
         Position four{ piece.pos.row + temp, piece.pos.column - 1 };
-        movements.push_back(four);
+        pieces.push_back(four);
     }
-    return movements;
 }
 
-std::vector<Position> & Board::knight_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> movements;
-    if (piece.pos.row + 1 <= 7 && piece.pos.column + 2 <= 7
-        && (board[piece.pos.row + 1][piece.pos.column + 2] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row + 1, piece.pos.column + 2)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row + 1,
-            piece.pos.column + 2, opponents))) {
-            Position temp{ piece.pos.row + 1, piece.pos.column + 2 };
-            movements.push_back(temp);
+void Board::knight_movement(bool in_check, Position &king, Piece &piece,
+    std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    pieces.clear();
+    if (piece.pos.row + 1 <= 7 && piece.pos.column + 2 <= 7) {
+        if ((board[piece.pos.row + 1][piece.pos.column + 2] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row + 1, piece.pos.column + 2)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row + 1,
+                piece.pos.column + 2, opponents))) {
+                Position temp{ piece.pos.row + 1, piece.pos.column + 2 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row + 1 <= 7 && piece.pos.column - 2 <= 7
-        && (board[piece.pos.row + 1][piece.pos.column - 2] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row + 1, piece.pos.column - 2)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row + 1,
-            piece.pos.column - 2, opponents))) {
-            Position temp{ piece.pos.row + 1, piece.pos.column - 2 };
-            movements.push_back(temp);
+    if (piece.pos.row + 1 <= 7 && piece.pos.column - 2 >= 0) {
+        if ((board[piece.pos.row + 1][piece.pos.column - 2] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row + 1, piece.pos.column - 2)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row + 1,
+                piece.pos.column - 2, opponents))) {
+                Position temp{ piece.pos.row + 1, piece.pos.column - 2 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row - 1 <= 7 && piece.pos.column + 2 <= 7
-        && (board[piece.pos.row - 1][piece.pos.column + 2] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row - 1, piece.pos.column + 2)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row - 1,
-            piece.pos.column + 2, opponents))) {
-            Position temp{ piece.pos.row - 1, piece.pos.column + 2 };
-            movements.push_back(temp);
+    if (piece.pos.row - 1 >= 0 && piece.pos.column + 2 <= 7) {
+        if ((board[piece.pos.row - 1][piece.pos.column + 2] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row - 1, piece.pos.column + 2)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row - 1,
+                piece.pos.column + 2, opponents))) {
+                Position temp{ piece.pos.row - 1, piece.pos.column + 2 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row - 1 <= 7 && piece.pos.column - 2 <= 7
-        && (board[piece.pos.row - 1][piece.pos.column - 2] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row - 1, piece.pos.column - 2)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row - 1,
-            piece.pos.column - 2, opponents))) {
-            Position temp{ piece.pos.row - 1, piece.pos.column - 2 };
-            movements.push_back(temp);
+    if (piece.pos.row - 1 >= 0 && piece.pos.column - 2 >= 0) {
+        if ((board[piece.pos.row - 1][piece.pos.column - 2] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row - 1, piece.pos.column - 2)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row - 1,
+                piece.pos.column - 2, opponents))) {
+                Position temp{ piece.pos.row - 1, piece.pos.column - 2 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row + 2 <= 7 && piece.pos.column + 1 <= 7
-        && (board[piece.pos.row + 2][piece.pos.column + 1] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row + 2, piece.pos.column + 1)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row + 2,
-            piece.pos.column + 1, opponents))) {
-            Position temp{ piece.pos.row + 2, piece.pos.column + 1 };
-            movements.push_back(temp);
+    if (piece.pos.row + 2 <= 7 && piece.pos.column + 1 <= 7) {
+        if ((board[piece.pos.row + 2][piece.pos.column + 1] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row + 2, piece.pos.column + 1)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row + 2,
+                piece.pos.column + 1, opponents))) {
+                Position temp{ piece.pos.row + 2, piece.pos.column + 1 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row + 2 <= 7 && piece.pos.column - 1 <= 7
-        && (board[piece.pos.row + 2][piece.pos.column - 1] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row + 2, piece.pos.column - 1)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row + 2,
-            piece.pos.column - 1, opponents))) {
-        Position temp{ piece.pos.row + 2, piece.pos.column - 1 };
-        movements.push_back(temp);
+    if (piece.pos.row + 2 <= 7 && piece.pos.column - 1 >= 0) {
+        if ((board[piece.pos.row + 2][piece.pos.column - 1] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row + 2, piece.pos.column - 1)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row + 2,
+                piece.pos.column - 1, opponents))) {
+                Position temp{ piece.pos.row + 2, piece.pos.column - 1 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row - 2 <= 7 && piece.pos.column + 1 <= 7
-        && (board[piece.pos.row - 2][piece.pos.column + 1] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row - 2, piece.pos.column + 1)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row - 2,
-            piece.pos.column + 1, opponents))) {
-            Position temp{ piece.pos.row - 2, piece.pos.column + 1 };
-            movements.push_back(temp);
+    if (piece.pos.row - 2 >= 0 && piece.pos.column + 1 <= 7) {
+        if ((board[piece.pos.row - 2][piece.pos.column + 1] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row - 2, piece.pos.column + 1)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row - 2,
+                piece.pos.column + 1, opponents))) {
+                Position temp{ piece.pos.row - 2, piece.pos.column + 1 };
+                pieces.push_back(temp);
+            }
         }
     }
-    if (piece.pos.row - 2 <= 7 && piece.pos.column - 1 <= 7
-        && (board[piece.pos.row - 2][piece.pos.column - 1] == ' ') ||
-        opponents_piece(piece.is_white, piece.pos.row - 2, piece.pos.column - 1)) {
-        if (!in_check || (in_check && do_move(piece, piece.pos.row - 2,
-            piece.pos.column - 1, opponents))) {
-            Position temp{ piece.pos.row - 2, piece.pos.column - 1 };
-            movements.push_back(temp);
+    if (piece.pos.row - 2 >= 0 && piece.pos.column - 1 >= 0) {
+        if ((board[piece.pos.row - 2][piece.pos.column - 1] == ' ') ||
+            opponents_piece(piece.is_white, piece.pos.row - 2, piece.pos.column - 1)) {
+            if (!in_check || (in_check && do_move(piece, king, piece.pos.row - 2,
+                piece.pos.column - 1, opponents))) {
+                Position temp{ piece.pos.row - 2, piece.pos.column - 1 };
+                pieces.push_back(temp);
+            }
         }
     }
-    return movements;
 }
 
-std::vector<Position> & Board::rook_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> movements;
+void Board::rook_movement(bool in_check, Position &king, Piece &piece,
+    std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    pieces.clear();
     // up
-    for (int i = piece.pos.row; i >= 0; --i) {
+    for (int i = piece.pos.row - 1; i >= 0; --i) {
         if (board[i][piece.pos.column] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, piece.pos.column, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                i, piece.pos.column, opponents))) {
                 Position temp{ i, piece.pos.column };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, piece.pos.column)) {
-            if (!in_check || (in_check && do_move(piece, i, piece.pos.column, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                i, piece.pos.column, opponents))) {
                 Position temp{ i, piece.pos.column };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -270,17 +277,19 @@ std::vector<Position> & Board::rook_movement(bool in_check, Piece &piece,
         }
     }
     // down
-    for (int i = piece.pos.row; i <= 7; ++i) {
+    for (int i = piece.pos.row + 1; i <= 7; ++i) {
         if (board[i][piece.pos.column] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, piece.pos.column, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                i, piece.pos.column, opponents))) {
                 Position temp{ i, piece.pos.column };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, piece.pos.column)) {
-            if (!in_check || (in_check && do_move(piece, i, piece.pos.column, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                i, piece.pos.column, opponents))) {
                 Position temp{ i, piece.pos.column };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -289,17 +298,19 @@ std::vector<Position> & Board::rook_movement(bool in_check, Piece &piece,
         }
     }
     // left
-    for (int i = piece.pos.column; i >= 0; --i) {
+    for (int i = piece.pos.column - 1; i >= 0; --i) {
         if (board[piece.pos.row][i] == ' ') {
-            if (!in_check || (in_check && do_move(piece, piece.pos.row, i, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                piece.pos.row, i, opponents))) {
                 Position temp{ piece.pos.row, i };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, piece.pos.row, i)) {
-            if (!in_check || (in_check && do_move(piece, piece.pos.row, i, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king,
+                piece.pos.row, i, opponents))) {
                 Position temp{ piece.pos.row, i };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -308,17 +319,19 @@ std::vector<Position> & Board::rook_movement(bool in_check, Piece &piece,
         }
     }
     // right
-    for (int i = piece.pos.column; i <= 7; ++i) {
+    for (int i = piece.pos.column + 1; i <= 7; ++i) {
         if (board[piece.pos.row][i] == ' ') {
-            if (!in_check || (in_check && do_move(piece, piece.pos.row, i, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                piece.pos.row, i, opponents))) {
                 Position temp{ piece.pos.row, i };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, piece.pos.row, i)) {
-            if (!in_check || (in_check && do_move(piece, piece.pos.row, i, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, 
+                piece.pos.row, i, opponents))) {
                 Position temp{ piece.pos.row, i };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -326,26 +339,27 @@ std::vector<Position> & Board::rook_movement(bool in_check, Piece &piece,
             break;
         }
     }
-    return movements;
 }
 
-std::vector<Position> & Board::bishop_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> movements;
+void Board::bishop_movement(bool queen, bool in_check, Position &king, 
+    Piece &piece, std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    if (!queen) {
+        pieces.clear();
+    }
     // up-left
     int i = piece.pos.row - 1;
     int j = piece.pos.column - 1;
     while (i >= 0 && j >= 0) {
         if (board[i][j] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, j)) {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -360,15 +374,15 @@ std::vector<Position> & Board::bishop_movement(bool in_check, Piece &piece,
     j = piece.pos.column + 1;
     while (i >= 0 && j <= 7) {
         if (board[i][j] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, j)) {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -383,15 +397,15 @@ std::vector<Position> & Board::bishop_movement(bool in_check, Piece &piece,
     j = piece.pos.column - 1;
     while (i <= 7 && j >= 0) {
         if (board[i][j] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, j)) {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -406,15 +420,15 @@ std::vector<Position> & Board::bishop_movement(bool in_check, Piece &piece,
     j = piece.pos.column + 1;
     while (i <= 7 && j <= 7) {
         if (board[i][j] == ' ') {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
         }
         else if (opponents_piece(piece.is_white, i, j)) {
-            if (!in_check || (in_check && do_move(piece, i, j, opponents))) {
+            if (!in_check || (in_check && do_move(piece, king, i, j, opponents))) {
                 Position temp{ i, j };
-                movements.push_back(temp);
+                pieces.push_back(temp);
             }
             break;
         }
@@ -424,59 +438,54 @@ std::vector<Position> & Board::bishop_movement(bool in_check, Piece &piece,
         ++i;
         ++j;
     }
-    return movements;
 }
 
-std::vector<Position> & Board::queen_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> temp = rook_movement(in_check, piece, opponents);
-    std::vector<Position> movements(temp);
-    std::vector<Position> temp2 = bishop_movement(in_check, piece, opponents);
-    movements.insert(movements.end(), temp2.begin(), temp2.end());
-    return movements;
+void Board::queen_movement(bool in_check, Position &king, Piece &piece,
+    std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    rook_movement(in_check, king, piece, opponents, pieces);
+    bishop_movement(true, in_check, king, piece, opponents, pieces);
 }
 
-std::vector<Position> & Board::king_movement(bool in_check, Piece &piece,
-    std::vector<Piece> &opponents) {
-    std::vector<Position> movements;
+void Board::king_movement(bool in_check, Position &king, Piece &piece,
+    std::vector<Piece> &opponents, std::vector<Position> &pieces) {
+    pieces.clear();
     // down
     int i = piece.pos.row + 1;
     if (i <= 7 && (opponents_piece(piece.is_white, i, piece.pos.column)
         || board[i][piece.pos.column] == ' ')) {
         // make sure piece is not moving into check
-        if (do_move(piece, i, piece.pos.column, opponents)) {
+        if (do_move(piece, king, i, piece.pos.column, opponents)) {
             Position temp{ i, piece.pos.column };
-            movements.push_back(temp);
+            pieces.push_back(temp);
         }
     }
     // up
     i = piece.pos.row - 1;
     if (i >= 0 && (opponents_piece(piece.is_white, i, piece.pos.column)
         || board[i][piece.pos.column] == ' ')) {
-        if (do_move(piece, i, piece.pos.column, opponents)) {
+        if (do_move(piece, king, i, piece.pos.column, opponents)) {
             Position temp{ i, piece.pos.column };
-            movements.push_back(temp);
+            pieces.push_back(temp);
         }
     }
     // right
     i = piece.pos.column + 1;
     if (i <= 7 && (opponents_piece(piece.is_white, piece.pos.row, i)
         || board[piece.pos.row][i] == ' ')) {
-        if (do_move(piece, piece.pos.row, i, opponents)) {
+        if (do_move(piece, king, piece.pos.row, i, opponents)) {
             Position temp{ piece.pos.row, i };
-            movements.push_back(temp);
+            pieces.push_back(temp);
         }
     }
     // left
     i = piece.pos.column - 1;
     if (i >= 7 && (opponents_piece(piece.is_white, piece.pos.row, i)
         || board[piece.pos.row][i] == ' ')) {
-        if (do_move(piece, piece.pos.row, i, opponents)) {
+        if (do_move(piece, king, piece.pos.row, i, opponents)) {
             Position temp{ piece.pos.row, i };
-            movements.push_back(temp);
+            pieces.push_back(temp);
         }
     }
-    return movements;
 }
 
 // Returns true if king is in check on this board
@@ -498,16 +507,26 @@ bool Board::in_check(Position &king, std::vector<Piece> &opponents) {
     for (int i = 0; i < (int)(opponents.size()); ++i) {
         for (int j = 0; j < (int)(opponents[i].valid_moves.size()); ++j) {
             if (compare(king, opponents[i].valid_moves[j])) {
-                return false;
+                return true;
             }
         }
     }
-    return true;
+    return false;
 }
 
 // Performs move
-void Board::perform_move(Piece &piece, Position &end) {
+void Board::perform_move(Piece &piece, Position &end, 
+    std::vector<Piece> &opponents) {
     // moves piece on board
+    Compare_position compare;
+    if (board[end.row][end.column] != ' ') {
+        for (int i = 0; i < (int)(opponents.size()); ++i) {
+            if (compare(end, opponents[i].pos)) {
+                opponents.erase(opponents.begin() + i);
+                break;
+            }
+        }
+    }
     board[piece.pos.row][piece.pos.column] = ' ';
     board[end.row][end.column] = piece.letter;
     print_board();

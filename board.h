@@ -56,25 +56,26 @@ public:
     Board();
     void print_line(int color1, int color2, int line_in);
     void print_board();
-    char board_at(Position &position);
     bool opponents_piece(bool is_white, int row, int column);
-    bool do_move(Piece &piece, int end_row, int end_col, std::vector<Piece> &opponents);
-    std::vector<Position> & pawn_movement(bool in_check, Piece &piece,
+    bool do_move(Piece &piece, Position &king, int end_row, int end_col, 
         std::vector<Piece> &opponents);
-    std::vector<Position> & knight_movement(bool in_check, Piece &piece,
-        std::vector<Piece> &opponents);
-    std::vector<Position> & rook_movement(bool in_check, Piece &piece,
-        std::vector<Piece> &opponents);
-    std::vector<Position> & bishop_movement(bool in_check, Piece &piece,
-        std::vector<Piece> &opponents);
-    std::vector<Position> & queen_movement(bool in_check, Piece &piece,
-        std::vector<Piece> &opponents);
-    std::vector<Position> & king_movement(bool in_check, Piece &piece, 
-        std::vector<Piece> &opponents);
+    void pawn_movement(bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
+    void knight_movement(bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
+    void rook_movement(bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
+    void bishop_movement(bool queen, bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
+    void queen_movement(bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
+    void king_movement(bool in_check, Position &king, Piece &piece,
+        std::vector<Piece> &opponents, std::vector<Position> &pieces);
     bool in_check_test(Position &king, std::vector<std::string> &temp_board, 
         std::vector<Piece> &opponents);
     bool in_check(Position &king, std::vector<Piece> &opponents);
-    void perform_move(Piece &piece, Position &end);
+    void perform_move(Piece &piece, Position &end, 
+        std::vector<Piece> &opponents);
 };
 
 #endif
