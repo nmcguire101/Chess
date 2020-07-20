@@ -122,10 +122,10 @@ bool Board::do_move(Piece &piece, Position &king, int end_row, int end_col,
         Position temp_king{ end_row, end_col };
         king = temp_king;
     }
-    if (!in_check_test(king, temp_board, opponents)) {
-        return true;
+    if (in_check_test(king, temp_board, opponents)) {
+        return false;
     }
-    return false;
+    return true;
 }
 
 void Board::pawn_movement(bool in_check, Position &king, Piece &piece,
@@ -459,12 +459,56 @@ void Board::king_movement(bool in_check, Position &king, Piece &piece,
             pieces.push_back(temp);
         }
     }
+    // down-right
+    i = piece.pos.row + 1;
+    int j = piece.pos.column + 1;
+    if (i <= 7 && j <= 7 && (opponents_piece(piece.is_white, i, j)
+        || board[i][j] == ' ')) {
+        // make sure piece is not moving into check
+        if (do_move(piece, king, i, j, opponents)) {
+            Position temp{ i, j };
+            pieces.push_back(temp);
+        }
+    }
+    // down-left
+    i = piece.pos.row + 1;
+    j = piece.pos.column - 1;
+    if (i <= 7 && j >= 0 && (opponents_piece(piece.is_white, i, j)
+        || board[i][j] == ' ')) {
+        // make sure piece is not moving into check
+        if (do_move(piece, king, i, j, opponents)) {
+            Position temp{ i, j };
+            pieces.push_back(temp);
+        }
+    }
     // up
     i = piece.pos.row - 1;
     if (i >= 0 && (opponents_piece(piece.is_white, i, piece.pos.column)
         || board[i][piece.pos.column] == ' ')) {
         if (do_move(piece, king, i, piece.pos.column, opponents)) {
             Position temp{ i, piece.pos.column };
+            pieces.push_back(temp);
+        }
+    }
+    // up-right
+    i = piece.pos.row - 1;
+    j = piece.pos.column + 1;
+    if (i >= 0 && j <= 7 && (opponents_piece(piece.is_white, i, j)
+        || board[i][j] == ' ')) {
+        // make sure piece is not moving into check
+        if (do_move(piece, king, i, j, opponents)) {
+            Position temp{ i, j };
+            pieces.push_back(temp);
+        }
+    }
+    // up-left
+    i = piece.pos.row - 1;
+    j = piece.pos.column - 1;
+    if (i >= 0 && j >= 0 && (opponents_piece(piece.is_white, i, j)
+        || board[i][j] == ' ')) {
+        // make sure piece is not moving into check
+        if (do_move(piece, king, i, j, opponents)) {
+            Position temp{ i, j };
             pieces.push_back(temp);
         }
     }
@@ -495,11 +539,11 @@ bool Board::in_check_test(Position &king, std::vector<std::string> &temp_board,
     for (int i = 0; i < (int)(opponents.size()); ++i) {
         for (int j = 0; j < (int)(opponents[i].valid_moves.size()); ++j) {
             if (compare(king, opponents[i].valid_moves[j])) {
-                return false;
+                return true;
             }
         }
     }
-    return true;
+    return false;
 }
 
 bool Board::in_check(Position &king, std::vector<Piece> &opponents) {

@@ -107,6 +107,9 @@ bool Player::valid_move(Position &end) {
         }
     }
     std::cout << "Invalid " << to_string(current.name) << " movement.\n";
+    if (in_check) {
+        std::cout << name << ", your move must get you out of check\n";
+    }
     return false;
 }
 
@@ -173,6 +176,7 @@ bool Player::no_moves() {
 
 bool Player::make_turn(Board &board, std::vector<Piece> &opponents_pieces) {
     if (board.in_check(king, opponents_pieces)) {
+        std::cout << name << " is in check. Must enter move that gets out of check\n";
         in_check = true;
     }
     generate_valid_moves(in_check, board, opponents_pieces);
@@ -182,6 +186,10 @@ bool Player::make_turn(Board &board, std::vector<Piece> &opponents_pieces) {
     std::string capitalize = " (lowercase)";
     if (is_white) {
         capitalize = " (uppercase)";
+    }
+    if (in_check) {
+        std::cout << name << capitalize 
+            << " is in check. Must enter move that gets out of check\n";
     }
     std::string start_mes = ", please enter location of piece to move (ex: A2): ";
     std::string end_mes = ", please enter end location or type \"undo\" (ex: E5): ";
