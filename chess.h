@@ -18,10 +18,7 @@ public:
     std::vector<Piece> & get_pieces();
     void set_pieces(std::vector<Piece> &pieces_in);
     bool valid_start(Position &start);
-    bool valid_move(Position &end);
-    void generate_valid_moves(bool in_check, Board &board, 
-        std::vector<Piece> &opponents_pieces);
-    bool no_moves();
+    bool valid_move(Board &board, Position &end, std::vector<Piece> &opponents);
     bool make_turn(Board &board, std::vector<Piece> &opponents_pieces);
 };
 

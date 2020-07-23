@@ -1,2 +1,11 @@
-﻿  board.cpp
+﻿  chess.cpp
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(30): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(34): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(38): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(41): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(45): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(48): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(52): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(55): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
+c:\users\natalie\desktop\coding_experience\chess\chess\chess.cpp(64): warning C4838: conversion from 'int' to 'char' requires a narrowing conversion
   chess.vcxproj -> C:\Users\Natalie\Desktop\Coding_Experience\chess\Debug\chess.exe
