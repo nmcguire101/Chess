@@ -115,7 +115,7 @@ bool Board::opponents_piece(bool is_white, int row, int col) {
 bool Board::do_move(Piece &piece, Position &king, int end_row, int end_col, 
     std::vector<Piece> &opponents) {
     std::vector<std::string> temp_board = board;
-    std::vector <Piece> &temp_opponents = opponents;
+    std::vector <Piece> temp_opponents = opponents;
     Compare_position compare;
     // temporarily removes killed piece
     if (board[end_row][end_col] != ' ') {
@@ -249,14 +249,14 @@ bool Board::move_forward(Piece &piece, int col, int row, Position &king,
     int i = piece.pos.row + row;
     int j = piece.pos.col + col;
     while (i <= 7 && j <= 7 && i >= 0 && j >= 0 && board[i][j] == ' ') {
-        if (do_move(piece, king, i, piece.pos.col, opponents)) {
+        if (do_move(piece, king, i, j, opponents)) {
             return true;
         }
         i += row;
         j += col;
     }
     if (i <= 7 && j <= 7 && i >= 0 && j >= 0 && opponents_piece(piece.is_white, i, j)) {
-        if (do_move(piece, king, i, piece.pos.col, opponents)) {
+        if (do_move(piece, king, i, j, opponents)) {
             return true;
         }
     }
@@ -525,7 +525,7 @@ bool Board::nothing_in_way(Piece &piece, int col, int row, int end_col, int end_
 bool Board::valid_movement(PieceName name, Piece &piece, int end_row, int end_col) {
     // checks that end and start are not the same and space is empty or is an opponents piece
     if ((end_row == piece.pos.row && end_col == piece.pos.col) || (!(board[end_row][end_col] 
-        == ' ') || (opponents_piece(piece.is_white, end_row, end_col)))) {
+        == ' ' || opponents_piece(piece.is_white, end_row, end_col)))) {
         return false;
     }
     int temp = 1;

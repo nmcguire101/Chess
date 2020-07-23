@@ -111,7 +111,6 @@ bool Player::valid_move(Board &board, Position &end, std::vector<Piece> &opponen
                 return true;
             }
         }
-        in_check = false;
     }
     std::cout << "Invalid " << to_string(current.name) << " movement.\n";
     if (in_check) {
@@ -123,8 +122,10 @@ bool Player::valid_move(Board &board, Position &end, std::vector<Piece> &opponen
 bool Player::make_turn(Board &board, std::vector<Piece> &opponents_pieces) {
     // checks if player is in check
     if (board.in_check(is_white, king, opponents_pieces)) {
-        std::cout << name << " is in check. Must enter move that gets out of check\n";
         in_check = true;
+    }
+    else {
+        in_check = false;
     }
     // tests every piece to make sure at least one can move
     if (!board.can_move(king, pieces, opponents_pieces)) {
